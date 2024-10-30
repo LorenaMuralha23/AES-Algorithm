@@ -31,9 +31,9 @@ import javax.crypto.spec.SecretKeySpec;
  * @author USER
  */
 public class AESEncryption {
-    
+
     private final String encryptAlgorithm = "AES/CBC/PKCS5Padding";
-    
+
     public String readFile(File fileToRead) {
         BufferedReader bufferReader = null;
         String completeMessage = "";
@@ -46,7 +46,7 @@ public class AESEncryption {
                 srBuilder.append("\n");
             }
             completeMessage = srBuilder.toString();
-            
+
         } catch (FileNotFoundException ex) {
             Logger.getLogger(AESEncryption.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
@@ -58,7 +58,7 @@ public class AESEncryption {
                 Logger.getLogger(AESEncryption.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        
+
         return completeMessage;
     }
 
@@ -91,7 +91,7 @@ public class AESEncryption {
      * @throws InvalidKeySpecException
      */
     public SecretKey generateKeyFromPassword(String password) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        
+
         SecureRandom random = new SecureRandom();
         byte[] salt = new byte[16];
         random.nextBytes(salt);
@@ -113,27 +113,42 @@ public class AESEncryption {
         new SecureRandom().nextBytes(iv);
         return new IvParameterSpec(iv);
     }
-    
+
     public void encrypt(File contentToEncrypt, SecretKey secretKey, IvParameterSpec iv) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         String messageToEncrypt = readFile(contentToEncrypt);
         Cipher cipher = Cipher.getInstance(this.encryptAlgorithm);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv);
         byte[] cipherText = cipher.doFinal(messageToEncrypt.getBytes());
         System.out.println("Message encrypted successfully!");
-        saveEncryptedFile("encryptedMessage.txt", Base64.getEncoder().encodeToString(cipherText));
+        saveFile("encryptedMessages", "encryptedMessage.txt", Base64.getEncoder().encodeToString(cipherText));
     }
-    
-    public void saveEncryptedFile(String encryptedFileName, String encryptedMessage) {
+
+    public void decrypt(File contentToDecrypt, SecretKey secretKey, IvParameterSpec iv) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+        String encryptedMessage = readFile(contentToDecrypt);
+
+        encryptedMessage = encryptedMessage.replaceAll("\\s+", ""); // Remove todos os espaços em branco e quebras de linha
+
+        byte[] cipherText = Base64.getDecoder().decode(encryptedMessage);
+
+        Cipher cipher = Cipher.getInstance(this.encryptAlgorithm);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
+        byte[] plainText = cipher.doFinal(cipherText);
+
+        System.out.println("Message decrypted successfully!");
+        saveFile("decryptedMessages", "decryptedMessage.txt", new String(plainText));
+    }
+
+    public void saveFile(String folderName, String encryptedFileName, String encryptedMessage) {
         FileWriter fileWriter = null;
         String currentDir = System.getProperty("user.dir");
         try {
-            String encryptedMsgPath = currentDir + "\\encryptMessages\\"
+            String encryptedMsgPath = currentDir + "\\" + folderName + "\\"
                     + encryptedFileName;
             fileWriter = new FileWriter(encryptedMsgPath);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
             bufferedWriter.write(encryptedMessage);
-            
-            System.out.println("File encrypted and saved successfully!\n");
+
+            System.out.println("File saved successfully!\n");
 
             //closing resources
             bufferedWriter.close();

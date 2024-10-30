@@ -13,58 +13,84 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.swing.InputMap;
 import javax.swing.JFileChooser;
 
 public class Main {
 
+    public static AESEncryption cryptography = new AESEncryption();
+    public static Scanner input = new Scanner(System.in);
+
     public static void main(String[] args) {
-        try {
-            Scanner input = new Scanner(System.in);
-            AESEncryption cryptography = new AESEncryption();
-            File fileToEncrypt = null;
+        IvParameterSpec iv = null;
+        SecretKey key = null;
+        int option = 0;
 
-            JFileChooser fileChooser = new JFileChooser();
+        while (option != 3) {
+            System.out.println("====== AES Algorithm Menu ======");
+            System.out.println("Choose an option");
+            System.out.println("1 - Encrypt file");
+            System.out.println("2 - Decrypt file");
+            System.out.println("3 - exit");
+            option = Integer.parseInt(input.nextLine());
 
-            fileChooser.setDialogTitle("Choose a file to encrypt");
+            if (option != 3) {
+                try {
+                    File fileToProcess = openFileChooser();
 
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                    switch (option) {
+                        case 1:
 
-            int result = fileChooser.showOpenDialog(null);
+                            System.out.println("Type a password: ");
+                            String password = input.nextLine();
+                            System.out.println("");
 
-            if (result == JFileChooser.APPROVE_OPTION) {
-                fileToEncrypt = fileChooser.getSelectedFile();
-            } else {
-                System.out.println("No file was chosen.");
+                            if (key == null || iv == null) {
+                                //Gerando a key
+                                key = cryptography.generateKeyFromPassword(password);
+                                //Gerando o vetor de inicialização
+                                iv = cryptography.generateIV();
+                            }
+                            cryptography.encrypt(fileToProcess, key, iv);
+                            break;
+
+                        case 2:
+                            if (key != null && iv != null) {
+                                cryptography.decrypt(fileToProcess, key, iv);
+                            } else {
+                                System.out.println("You have to define the initialization vector and the key to decrypt the message!");
+                            }
+                            break;
+                        default:
+                            throw new AssertionError();
+                    }
+                } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException ex) {
+                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
-
-            System.out.println("Type a password: ");
-            String password = input.nextLine();
-
-            //Gerando a key
-            SecretKey key = cryptography.generateKeyFromPassword(password);
-            //Gerando o vetor de inicialização
-            IvParameterSpec iv = cryptography.generateIV();
-
-            cryptography.encrypt(fileToEncrypt, key, iv);
-
-        } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InvalidKeySpecException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (NoSuchPaddingException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InvalidKeyException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InvalidAlgorithmParameterException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalBlockSizeException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (BadPaddingException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
 
-    
+    public static File openFileChooser() {
+        File fileToEncrypt = null;
+
+        JFileChooser fileChooser = new JFileChooser();
+
+        fileChooser.setDialogTitle("Choose a file to encrypt");
+
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+        int result = fileChooser.showOpenDialog(null);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            fileToEncrypt = fileChooser.getSelectedFile();
+
+        } else {
+            System.out.println("No file was chosen.");
+        }
+
+        return fileToEncrypt;
+    }
 
 }
